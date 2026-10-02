@@ -2,109 +2,159 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jogo VR Box - WebXR</title>
-  <!-- Biblioteca A-Frame para suporte a WebXR e 3D no navegador -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Gorilla Tag VR - 6DoF & Map System</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- Componente de Ambiente Realista (PBR e sombras Ray Tracing simuladas) -->
+  <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
 </head>
 <body>
 
-  <a-scene>
-    <!-- 1. AMBIENTE E ILUMINAÇÃO -->
-    <!-- Céu -->
-    <a-sky color="#87CEEB"></a-sky>
+  <a-scene shadow="type: pcfsoft" renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true;">
     
-    <!-- Chão -->
-    <a-plane position="0 0 0" 
-             rotation="-90 0 0" 
-             width="30" 
-             height="30" 
-             color="#7BC8A4">
-    </a-plane>
+    <!-- GERENCIADOR DE AMBIENTE (DIA / TARDE / NOITE) -->
+    <a-entity id="meu-ambiente" 
+              environment="preset: forest; lighting: distant; shadow: true; shadowSize: 15; dressing: trees; dressingAmount: 35; skyType: atmosphere; skyColor: #4790bd;">
+    </a-entity>
 
-    <!-- Luz Ambiente -->
-    <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
-    <a-light type="directional" position="-1 4 1" intensity="0.8"></a-light>
+    <!-- MAPA FLORESTA / GORILLA TAG -->
+    <!-- Chão Central -->
+    <a-cylinder position="0 0.1 -3" radius="6" height="0.2" color="#5c4033" material="roughness: 0.8" shadow></a-cylinder>
 
-    <!-- 2. OBJETOS INTERATIVOS -->
-    <!-- Cubo azul que muda de cor e se move ao ser encarado -->
-    <a-box id="cubo-interativo" 
-           position="-1.5 1.5 -3" 
-           rotation="0 45 0" 
-           color="#4CC3D9" 
-           muda-cor-ao-olhar>
-    </a-box>
+    <!-- Árvores e Plataformas -->
+    <a-entity id="tronco-central" position="0 3.5 -3">
+      <a-cylinder radius="1.2" height="7" color="#3d2817" material="roughness: 0.9" shadow></a-cylinder>
+      <a-sphere position="0 3.5 0" radius="3" color="#1e4d2b" material="roughness: 0.6" shadow></a-sphere>
+    </a-entity>
 
-    <!-- Esfera decorativa -->
-    <a-sphere position="2 1.2 -4" 
-              radius="0.8" 
-              color="#EF2D5E">
-    </a-sphere>
+    <a-box position="-1.5 2 -2" width="2" height="0.2" depth="1.5" color="#8b5a2b" shadow></a-box>
+    <a-box position="1.2 3.2 -3.5" width="2" height="0.2" depth="1.5" color="#8b5a2b" shadow></a-box>
 
-    <!-- Cilindro de referência -->
-    <a-cylinder position="0 0.75 -5" 
-                radius="0.5" 
-                height="1.5" 
-                color="#FFC65D">
+    <!-- QUADRO DE DENÚNCIAS E CONTROLES -->
+    <a-entity id="quadro-denuncias" position="0 2 -1.2" rotation="0 0 0">
+      <a-box width="2.4" height="1.6" depth="0.1" color="#111" shadow></a-box>
+      <a-plane position="0 0 0.06" width="2.3" height="1.5" color="#1a1a24">
+        <a-text value="GORILLA TAG - PAINEL" align="center" position="0 0.55 0.01" scale="0.5 0.5 0.5" color="#ff3333"></a-text>
+        <a-text value="Escolher Horario do Dia:" align="center" position="0 0.35 0.01" scale="0.3 0.3 0.3" color="#ffffff"></a-text>
+
+        <!-- BOTOES DE HORÁRIO -->
+        <a-box class="botao-interativo" munda-tempo="preset: forest; sky: #4790bd" position="-0.7 0.05 0.02" width="0.6" height="0.3" depth="0.05" color="#f1c40f">
+          <a-text value="DIA" align="center" position="0 0 0.04" scale="0.3 0.3 0.3" color="#000"></a-text>
+        </a-box>
+
+        <a-box class="botao-interativo" munda-tempo="preset: sunset; sky: #e67e22" position="0 0.05 0.02" width="0.6" height="0.3" depth="0.05" color="#e67e22">
+          <a-text value="TARDE" align="center" position="0 0 0.04" scale="0.3 0.3 0.3" color="#fff"></a-text>
+        </a-box>
+
+        <a-box class="botao-interativo" munda-tempo="preset: starry; sky: #050510" position="0.7 0.05 0.02" width="0.6" height="0.3" depth="0.05" color="#2c3e50">
+          <a-text value="NOITE" align="center" position="0 0 0.04" scale="0.3 0.3 0.3" color="#fff"></a-text>
+        </a-box>
+
+        <!-- Botão de Denúncia -->
+        <a-box class="botao-interativo" denúncia-acao position="0 -0.4 0.02" width="1.8" height="0.25" depth="0.05" color="#e74c3c">
+          <a-text id="texto-denuncia" value="[ DENUNCIAR JOGADOR ]" align="center" position="0 0 0.04" scale="0.3 0.3 0.3" color="#fff"></a-text>
+        </a-box>
+      </a-plane>
+    </a-entity>
+
+    <!-- BOTOES VIRTUAIS DE MOVIMENTO ESPACIAL (SIMULAÇÃO 6DOF) -->
+    <!-- Botão de Agachar/Levantar (Eixo Y) -->
+    <a-cylinder controle-altura="acao: toggle" position="-1.2 0.3 -0.8" radius="0.2" height="0.1" color="#3498db">
+      <a-text value="AGACHAR" align="center" rotation="-90 0 0" position="0 0.06 0" scale="0.2 0.2 0.2"></a-text>
     </a-cylinder>
 
-    <!-- 3. CÂMERA E CURSOR DE OLHAR (GAZE CONTROLLER) -->
-    <a-entity id="rig" position="0 0 0">
-      <a-camera look-controls position="0 1.6 0">
-        <!-- O cursor funciona como a mira do jogador para o VR Box -->
-        <a-cursor id="cursor"
-                  fuse="true" 
-                  fuse-timeout="1500"
-                  position="0 0 -1"
-                  geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                  material="color: #FFD700; shader: flat">
-          <!-- Animação do cursor diminuindo ao focar em um objeto -->
-          <a-animation begin="fusing" 
-                       easing="ease-in" 
-                       attribute="scale" 
-                       fill="backwards" 
-                       from="1 1 1" 
-                       to="0.2 0.2 0.2" 
-                       dur="1500">
-          </a-animation>
+    <!-- SISTEMA DE CÂMERA 6DOF (Movimentação Espacial Completa) -->
+    <a-entity id="rig" position="0 1.6 2" simula-6dof>
+      <a-camera look-controls position="0 0 0">
+        <!-- Mira fixa verde para clicar olhando (Gaze Control) -->
+        <a-cursor fuse="true" 
+                  fuse-timeout="1200" 
+                  position="0 0 -1" 
+                  geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025" 
+                  material="color: #00FF00; shader: flat">
         </a-cursor>
       </a-camera>
     </a-entity>
+
   </a-scene>
 
-  <!-- 4. LÓGICA E SCRIPTS EM JAVASCRIPT -->
+  <!-- LÓGICA DE PROGRAMAÇÃO (JAVASCRIPT) -->
   <script>
-    // Registro de um componente A-Frame customizado para a interação
-    AFRAME.registerComponent('muda-cor-ao-olhar', {
+    // Troca de horário no ambiente
+    AFRAME.registerComponent('munda-tempo', {
+      schema: { preset: {type: 'string'} },
       init: function () {
-        var el = this.el;
-        var cores = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#4CC3D9'];
-        var indiceCor = 0;
-
-        // Evento disparado quando o cursor de olhar (fuse) completa o tempo estipulado
-        el.addEventListener('click', function () {
-          // Muda para a próxima cor da lista
-          indiceCor = (indiceCor + 1) % cores.length;
-          el.setAttribute('color', cores[indiceCor]);
-
-          // Move o cubo ligeiramente para cima
-          var posicaoAtual = el.getAttribute('position');
-          el.setAttribute('position', {
-            x: posicaoAtual.x,
-            y: posicaoAtual.y + 0.2,
-            z: posicaoAtual.z
-          });
+        var data = this.data;
+        this.el.addEventListener('click', function () {
+          var env = document.querySelector('#meu-ambiente');
+          env.setAttribute('environment', 'preset', data.preset);
         });
+      }
+    });
 
-        // Efeito visual quando a mira entra no objeto
-        el.addEventListener('mouseenter', function () {
-          el.setAttribute('scale', '1.2 1.2 1.2');
+    // Botão de Denúncia
+    AFRAME.registerComponent('denúncia-acao', {
+      init: function () {
+        this.el.addEventListener('click', function () {
+          var txt = document.querySelector('#texto-denuncia');
+          txt.setAttribute('value', 'DENUNCIA ENVIADA!');
+          setTimeout(function() {
+            txt.setAttribute('value', '[ DENUNCIAR JOGADOR ]');
+          }, 2000);
         });
+      }
+    });
 
-        // Efeito visual quando a mira sai do objeto
-        el.addEventListener('mouseleave', function () {
-          el.setAttribute('scale', '1 1 1');
+    // Alternar altura (Agachar / Levantar - Eixo Y do 6DoF)
+    var agachado = false;
+    AFRAME.registerComponent('controle-altura', {
+      init: function () {
+        this.el.addEventListener('click', function () {
+          var rig = document.querySelector('#rig');
+          var pos = rig.getAttribute('position');
+          if (!agachado) {
+            pos.y = 0.8; // Altura agachado
+            agachado = true;
+          } else {
+            pos.y = 1.6; // Altura normal de pé
+            agachado = false;
+          }
+          rig.setAttribute('position', pos);
         });
+      }
+    });
+
+    // SIMULAÇÃO DE 6DOF (Movimento Completo: Frentes, Trás, Esquerda, Direita e Agachar)
+    AFRAME.registerComponent('simula-6dof', {
+      tick: function () {
+        var camera = this.el.querySelector('a-camera');
+        if (!camera) return;
+        
+        var rotation = camera.getAttribute('rotation');
+        var position = this.el.getAttribute('position');
+        var speed = 0.04;
+
+        // 1. Caminhar para a FRENTE (Olhar ligeiramente para baixo)
+        if (rotation.x < -12 && rotation.x > -50) {
+          var dir = new THREE.Vector3();
+          camera.object3D.getWorldDirection(dir);
+          dir.y = 0;
+          dir.normalize();
+          position.x -= dir.x * speed;
+          position.z -= dir.z * speed;
+          this.el.setAttribute('position', position);
+        }
+
+        // 2. Recuar / ANDAR PARA TRÁS (Olhar bem para cima)
+        if (rotation.x > 35) {
+          var dir = new THREE.Vector3();
+          camera.object3D.getWorldDirection(dir);
+          dir.y = 0;
+          dir.normalize();
+          position.x += dir.x * (speed * 0.7);
+          position.z += dir.z * (speed * 0.7);
+          this.el.setAttribute('position', position);
+        }
       }
     });
   </script>
