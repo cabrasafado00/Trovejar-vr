@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo VR Box - WebXR</title>
+  <!-- Biblioteca A-Frame para suporte a WebXR e 3D no navegador -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+</head>
+<body>
+
+  <a-scene>
+    <!-- 1. AMBIENTE E ILUMINAÇÃO -->
+    <!-- Céu -->
+    <a-sky color="#87CEEB"></a-sky>
+    
+    <!-- Chão -->
+    <a-plane position="0 0 0" 
+             rotation="-90 0 0" 
+             width="30" 
+             height="30" 
+             color="#7BC8A4">
+    </a-plane>
+
+    <!-- Luz Ambiente -->
+    <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
+    <a-light type="directional" position="-1 4 1" intensity="0.8"></a-light>
+
+    <!-- 2. OBJETOS INTERATIVOS -->
+    <!-- Cubo azul que muda de cor e se move ao ser encarado -->
+    <a-box id="cubo-interativo" 
+           position="-1.5 1.5 -3" 
+           rotation="0 45 0" 
+           color="#4CC3D9" 
+           muda-cor-ao-olhar>
+    </a-box>
+
+    <!-- Esfera decorativa -->
+    <a-sphere position="2 1.2 -4" 
+              radius="0.8" 
+              color="#EF2D5E">
+    </a-sphere>
+
+    <!-- Cilindro de referência -->
+    <a-cylinder position="0 0.75 -5" 
+                radius="0.5" 
+                height="1.5" 
+                color="#FFC65D">
+    </a-cylinder>
+
+    <!-- 3. CÂMERA E CURSOR DE OLHAR (GAZE CONTROLLER) -->
+    <a-entity id="rig" position="0 0 0">
+      <a-camera look-controls position="0 1.6 0">
+        <!-- O cursor funciona como a mira do jogador para o VR Box -->
+        <a-cursor id="cursor"
+                  fuse="true" 
+                  fuse-timeout="1500"
+                  position="0 0 -1"
+                  geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                  material="color: #FFD700; shader: flat">
+          <!-- Animação do cursor diminuindo ao focar em um objeto -->
+          <a-animation begin="fusing" 
+                       easing="ease-in" 
+                       attribute="scale" 
+                       fill="backwards" 
+                       from="1 1 1" 
+                       to="0.2 0.2 0.2" 
+                       dur="1500">
+          </a-animation>
+        </a-cursor>
+      </a-camera>
+    </a-entity>
+  </a-scene>
+
+  <!-- 4. LÓGICA E SCRIPTS EM JAVASCRIPT -->
+  <script>
+    // Registro de um componente A-Frame customizado para a interação
+    AFRAME.registerComponent('muda-cor-ao-olhar', {
+      init: function () {
+        var el = this.el;
+        var cores = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#4CC3D9'];
+        var indiceCor = 0;
+
+        // Evento disparado quando o cursor de olhar (fuse) completa o tempo estipulado
+        el.addEventListener('click', function () {
+          // Muda para a próxima cor da lista
+          indiceCor = (indiceCor + 1) % cores.length;
+          el.setAttribute('color', cores[indiceCor]);
+
+          // Move o cubo ligeiramente para cima
+          var posicaoAtual = el.getAttribute('position');
+          el.setAttribute('position', {
+            x: posicaoAtual.x,
+            y: posicaoAtual.y + 0.2,
+            z: posicaoAtual.z
+          });
+        });
+
+        // Efeito visual quando a mira entra no objeto
+        el.addEventListener('mouseenter', function () {
+          el.setAttribute('scale', '1.2 1.2 1.2');
+        });
+
+        // Efeito visual quando a mira sai do objeto
+        el.addEventListener('mouseleave', function () {
+          el.setAttribute('scale', '1 1 1');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
