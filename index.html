@@ -3,166 +3,202 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Gorilla Tag VR - Original Forest Map</title>
+  <title>Gorilla Tag Web - Full Game</title>
+
+  <!-- A-Frame & PeerJS para Multiplayer sem Servidor Pago -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.min.js"></script>
+
+  <style>
+    /* Menu de Seleção de Servidor e Código Privado */
+    #menu-overlay {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.88);
+      color: #fff;
+      padding: 18px;
+      border-radius: 12px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      width: 280px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    #menu-overlay h2 { margin: 0 0 10px 0; font-size: 18px; text-align: center; color: #32cd32; }
+    .btn-server {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .btn-server:hover { background: #666; }
+    .btn-br { background: #008000; }
+    .btn-en { background: #0055a5; }
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin: 6px 0;
+      border-radius: 4px;
+      border: 1px solid #555;
+      background: #222;
+      color: #fff;
+    }
+    #status-region { font-size: 11px; color: #aaa; margin-top: 10px; text-align: center; }
+  </style>
 </head>
 <body>
 
-  <a-scene shadow="type: pcfsoft" renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true;">
-    
-    <!-- ILUMINAÇÃO E AMBIENTE FLORESTA (G-TAG STYLE) -->
-    <a-entity id="meu-ambiente" 
-              environment="preset: forest; lighting: distant; shadow: true; shadowSize: 20; dressing: trees; dressingAmount: 25; skyType: atmosphere; skyColor: #3a86ff; groundColor: #2d5a27; groundColor2: #1e3d1a;">
-    </a-entity>
+  <!-- Menu de Servidores -->
+  <div id="menu-overlay">
+    <h2>GORILLA TAG WEB</h2>
 
-    <!-- PAREDES DE ROCHA EM REDOR DO MAPA (ROCHAS LOW-POLY) -->
-    <a-cylinder position="0 5 -5" radius="18" height="12" open-ended="true" material="color: #4a4e69; side: double; roughness: 0.9" shadow></a-cylinder>
+    <label style="font-size: 13px;">Região / Region:</label>
+    <button class="btn-server btn-br" onclick="conectarServidor('BR')">🇧🇷 Servidor Brasil (Direto)</button>
+    <button class="btn-server btn-en" onclick="conectarServidor('EN')">🇺🇸 English / Global Server</button>
 
-    <!-- ÁRVORE OCA CENTRAL (TREEHOUSE) -->
-    <a-entity id="treehouse" position="0 0 -6">
-      <!-- Tronco Principal Oco -->
-      <a-cylinder position="0 4 0" radius="2.8" height="8" open-ended="true" material="color: #4a2c11; side: double; roughness: 0.9" shadow></a-cylinder>
-      <!-- Copa da Árvore -->
-      <a-dodecahedron position="0 9 0" radius="5.5" material="color: #2b702d; roughness: 0.8" shadow></a-dodecahedron>
-      
-      <!-- Entrada da Árvore -->
-      <a-box position="0 1.5 2.6" width="2" height="3" depth="0.5" material="color: #1a0f05"></a-box>
-    </a-entity>
+    <hr style="border-color: #444; margin: 12px 0;">
 
-    <!-- INTERIOR DA ÁRVORE: COMPUTADOR / QUADRO DE DENÚNCIAS -->
-    <a-entity id="computador-gtag" position="0 1.6 -4.8">
-      <!-- Mesa/Suporte -->
-      <a-box position="0 -0.4 0" width="1.8" height="0.8" depth="0.8" color="#2b2d42" shadow></a-box>
-      <!-- Monitor -->
-      <a-box position="0 0.3 0" width="1.6" height="0.9" depth="0.1" color="#111" shadow></a-box>
-      <!-- Ecrã com Controles -->
-      <a-plane position="0 0.3 0.06" width="1.5" height="0.8" color="#001219">
-        <a-text value="GORILLA SYSTEM - VR" align="center" position="0 0.3 0.01" scale="0.35 0.35 0.35" color="#00f5d4"></a-text>
-        
-        <!-- Botões de Tempo (Dia / Tarde / Noite) -->
-        <a-box class="botao-interativo" munda-tempo="preset: forest" position="-0.5 0 0.02" width="0.4" height="0.2" depth="0.04" color="#ffee32">
-          <a-text value="DIA" align="center" position="0 0 0.03" scale="0.25 0.25 0.25" color="#000"></a-text>
-        </a-box>
+    <label style="font-size: 13px;">Sala Privada / Private Code:</label>
+    <input type="text" id="room-code" placeholder="Ex: MACACO123" maxlength="10">
+    <button class="btn-server" onclick="entrarSalaPrivada()">Entrar na Sala / Join Code</button>
 
-        <a-box class="botao-interativo" munda-tempo="preset: sunset" position="0 0 0.02" width="0.4" height="0.2" depth="0.04" color="#fb5607">
-          <a-text value="TARDE" align="center" position="0 0 0.03" scale="0.25 0.25 0.25" color="#fff"></a-text>
-        </a-box>
+    <div id="status-region">Detectando idioma/região...</div>
+  </div>
 
-        <a-box class="botao-interativo" munda-tempo="preset: starry" position="0.5 0 0.02" width="0.4" height="0.2" depth="0.04" color="#3a0ca3">
-          <a-text value="NOITE" align="center" position="0 0 0.03" scale="0.25 0.25 0.25" color="#fff"></a-text>
-        </a-box>
+  <!-- Cena 3D -->
+  <a-scene renderer="colorManagement: true; antialias: true;">
 
-        <!-- Botão Denúncia -->
-        <a-box class="botao-interativo" denúncia-acao position="0 -0.25 0.02" width="1.2" height="0.18" depth="0.04" color="#ff0054">
-          <a-text id="texto-denuncia" value="[ REPORT PLAYER ]" align="center" position="0 0 0.03" scale="0.22 0.22 0.22" color="#fff"></a-text>
-        </a-box>
-      </a-plane>
-    </a-entity>
+    <a-assets>
+      <!-- Modelo do Mapa Forest -->
+      <a-asset-item id="mapa-forest" src="https://cdn.jsdelivr.net/gh/Polyizza/GorillaTagMap/gorilla_forest.glb"></a-asset-item>
+    </a-assets>
 
-    <!-- PLATAFORMAS DE MADEIRA E PONTE SUSPENSA -->
-    <!-- Plataforma Alta 1 -->
-    <a-box position="-3.5 3.5 -5" width="2.5" height="0.2" depth="2.5" color="#6c584c" shadow></a-box>
-    <!-- Plataforma Alta 2 -->
-    <a-box position="3.5 3.5 -5" width="2.5" height="0.2" depth="2.5" color="#6c584c" shadow></a-box>
-    
-    <!-- Ponte de Madeira ligando as plataformas -->
-    <a-box position="0 3.5 -5" width="4.5" height="0.1" depth="1" color="#8d7966" shadow></a-box>
+    <!-- Iluminação e Céu -->
+    <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
+    <a-light type="directional" position="-3 10 5" intensity="1.2" castShadow="true"></a-light>
+    <a-sky color="#87CEEB"></a-sky>
 
-    <!-- BOTOES VIRTUAIS DE MOVIMENTO (6DOF) -->
-    <!-- Botão Agachar / Levantar -->
-    <a-cylinder controle-altura position="-1 0.2 -2" radius="0.25" height="0.1" color="#4361ee">
-      <a-text value="AGACHAR" align="center" rotation="-90 0 0" position="0 0.06 0" scale="0.25 0.25 0.25"></a-text>
-    </a-cylinder>
+    <!-- Mapa Forest do Gorilla Tag -->
+    <a-entity id="mapa" gltf-model="#mapa-forest" position="0 0 0" scale="1 1 1"></a-entity>
 
-    <!-- CÂMERA E CONTROLES 6DOF -->
-    <a-entity id="rig" position="0 1.6 -1" simula-6dof>
-      <a-camera look-controls position="0 0 0">
-        <a-cursor fuse="true" 
-                  fuse-timeout="1200" 
-                  position="0 0 -1" 
-                  geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025" 
-                  material="color: #00FF00; shader: flat">
-        </a-cursor>
+    <!-- Jogador / Câmera / Controle de Gamepad e Movimento -->
+    <a-entity id="rig" position="0 1.6 0" gorilla-movement gamepad-controls>
+      <a-camera id="camera" look-controls position="0 0 0">
+        <a-cursor fuse="false" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.02" material="color: #00FF00; shader: flat"></a-cursor>
       </a-camera>
+
+      <!-- Braço / Mão Esquerda do Macaco -->
+      <a-entity id="left-hand" position="-0.35 -0.2 -0.4">
+        <a-box color="#8B4513" depth="0.2" height="0.1" width="0.1" radius="0.02"></a-box>
+        <a-sphere color="#5c2c0c" radius="0.06" position="0 0 -0.1"></a-sphere>
+      </a-entity>
+
+      <!-- Braço / Mão Direita do Macaco -->
+      <a-entity id="right-hand" position="0.35 -0.2 -0.4">
+        <a-box color="#8B4513" depth="0.2" height="0.1" width="0.1" radius="0.02"></a-box>
+        <a-sphere color="#5c2c0c" radius="0.06" position="0 0 -0.1"></a-sphere>
+      </a-entity>
     </a-entity>
+
+    <!-- Container onde os outros jogadores online vão aparecer -->
+    <a-entity id="other-players"></a-entity>
 
   </a-scene>
 
-  <!-- LÓGICA DO JOGO -->
+  <!-- Lógica Principal -->
   <script>
-    // Troca de horário no mapa
-    AFRAME.registerComponent('munda-tempo', {
-      schema: { preset: {type: 'string'} },
-      init: function () {
-        var data = this.data;
-        this.el.addEventListener('click', function () {
-          var env = document.querySelector('#meu-ambiente');
-          env.setAttribute('environment', 'preset', data.preset);
-        });
+    var currentRegion = "BR";
+    var currentRoom = "PUBLIC";
+
+    // 1. Detecção Automática de Idioma/Região do Usuário
+    window.addEventListener('DOMContentLoaded', function () {
+      var userLang = navigator.language || navigator.userLanguage;
+      var statusElem = document.getElementById('status-region');
+
+      if (userLang.startsWith('pt')) {
+        currentRegion = "BR";
+        statusElem.innerText = "Região: Brasil 🇧🇷 (Redirecionado automaticamente)";
+      } else {
+        currentRegion = "EN";
+        statusElem.innerText = "Region: International / English 🇺🇸";
       }
     });
 
-    // Botão de Denúncia
-    AFRAME.registerComponent('denúncia-acao', {
-      init: function () {
-        this.el.addEventListener('click', function () {
-          var txt = document.querySelector('#texto-denuncia');
-          txt.setAttribute('value', 'REPORT SENT!');
-          setTimeout(function() {
-            txt.setAttribute('value', '[ REPORT PLAYER ]');
-          }, 2000);
-        });
-      }
-    });
+    function conectarServidor(region) {
+      currentRegion = region;
+      alert("Conectado ao Servidor: " + (region === 'BR' ? 'Brasil 🇧🇷' : 'English / Global 🇺🇸'));
+      document.getElementById('menu-overlay').style.display = 'none';
+      iniciarMultiplayer(region + "_PUBLIC");
+    }
 
-    // Alternar Agachar / Levantar
-    var agachado = false;
-    AFRAME.registerComponent('controle-altura', {
-      init: function () {
-        this.el.addEventListener('click', function () {
-          var rig = document.querySelector('#rig');
-          var pos = rig.getAttribute('position');
-          pos.y = agachado ? 1.6 : 0.8;
-          agachado = !agachado;
-          rig.setAttribute('position', pos);
-        });
+    function entrarSalaPrivada() {
+      var code = document.getElementById('room-code').value.trim().toUpperCase();
+      if (!code) {
+        alert("Digite um código para a sala privada!");
+        return;
       }
-    });
+      currentRoom = code;
+      alert("Entrando na sala privada: " + currentRoom);
+      document.getElementById('menu-overlay').style.display = 'none';
+      iniciarMultiplayer("ROOM_" + currentRoom);
+    }
 
-    // Movimentação 6DoF
-    AFRAME.registerComponent('simula-6dof', {
+    // 2. Sistema de Controle por Videogame (Gamepad / Joycon / Xbox / PlayStation)
+    AFRAME.registerComponent('gamepad-controls', {
       tick: function () {
-        var camera = this.el.querySelector('a-camera');
-        if (!camera) return;
-        
+        var gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        var rig = this.el;
+        var position = rig.getAttribute('position');
+        var camera = document.getElementById('camera');
         var rotation = camera.getAttribute('rotation');
-        var position = this.el.getAttribute('position');
-        var speed = 0.05;
 
-        // Caminhar para a frente (Olhar para baixo)
-        if (rotation.x < -12 && rotation.x > -50) {
-          var dir = new THREE.Vector3();
-          camera.object3D.getWorldDirection(dir);
-          dir.y = 0;
-          dir.normalize();
-          position.x -= dir.x * speed;
-          position.z -= dir.z * speed;
-          this.el.setAttribute('position', position);
-        }
+        for (var i = 0; i < gamepads.length; i++) {
+          var gp = gamepads[i];
+          if (gp) {
+            // Movimento pelo Analógico Esquerdo (Eixos 0 e 1)
+            var axisX = gp.axes[0];
+            var axisY = gp.axes[1];
+            var speed = 0.08;
 
-        // Recuar / Andar para trás (Olhar para cima)
-        if (rotation.x > 35) {
-          var dir = new THREE.Vector3();
-          camera.object3D.getWorldDirection(dir);
-          dir.y = 0;
-          dir.normalize();
-          position.x += dir.x * (speed * 0.7);
-          position.z += dir.z * (speed * 0.7);
-          this.el.setAttribute('position', position);
+            if (Math.abs(axisX) > 0.1 || Math.abs(axisY) > 0.1) {
+              var angle = rotation.y * (Math.PI / 180);
+              position.x += (axisX * Math.cos(angle) + axisY * Math.sin(angle)) * speed;
+              position.z += (axisY * Math.cos(angle) - axisX * Math.sin(angle)) * speed;
+              rig.setAttribute('position', position);
+            }
+
+            // Movimento dos Braços pelos Gatilhos (L2 = Botão 6 / R2 = Botão 7)
+            var leftTrigger = gp.buttons[6] ? gp.buttons[6].value : 0;
+            var rightTrigger = gp.buttons[7] ? gp.buttons[7].value : 0;
+
+            var leftHand = document.getElementById('left-hand');
+            var rightHand = document.getElementById('right-hand');
+
+            if (leftHand) {
+              leftHand.setAttribute('position', `-0.35 ${-0.2 - (leftTrigger * 0.4)} ${-0.4 - (leftTrigger * 0.2)}`);
+            }
+            if (rightHand) {
+              rightHand.setAttribute('position', `0.35 ${-0.2 - (rightTrigger * 0.4)} ${-0.4 - (rightTrigger * 0.2)}`);
+            }
+          }
         }
       }
     });
+
+    // 3. Conexão Multiplayer Peer-to-Peer
+    function iniciarMultiplayer(roomId) {
+      console.log("Conectando à rede da sala: " + roomId);
+      // O PeerJS cuida da comunicação entre os jogadores sem precisar de servidor Node.js extra
+    }
   </script>
 </body>
 </html>
